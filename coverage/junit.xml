@@ -1,0 +1,46 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuites>
+  <testsuite name="/app/phpunit.xml" tests="25" assertions="32" errors="0" failures="0" skipped="0" time="0.019399">
+    <testsuite name="Unit" tests="25" assertions="32" errors="0" failures="0" skipped="0" time="0.019399">
+      <testsuite name="Tests\Unit\Queues\AbstractQueueTest" file="/app/tests/Unit/Queues/AbstractQueueTest.php" tests="4" assertions="4" errors="0" failures="0" skipped="0" time="0.016451">
+        <testcase name="testCanPublish" file="/app/tests/Unit/Queues/AbstractQueueTest.php" line="55" class="Tests\Unit\Queues\AbstractQueueTest" classname="Tests.Unit.Queues.AbstractQueueTest" assertions="0" time="0.015485"/>
+        <testcase name="testCanNack" file="/app/tests/Unit/Queues/AbstractQueueTest.php" line="77" class="Tests\Unit\Queues\AbstractQueueTest" classname="Tests.Unit.Queues.AbstractQueueTest" assertions="0" time="0.000157"/>
+        <testcase name="testCanConsume" file="/app/tests/Unit/Queues/AbstractQueueTest.php" line="45" class="Tests\Unit\Queues\AbstractQueueTest" classname="Tests.Unit.Queues.AbstractQueueTest" assertions="4" time="0.000705"/>
+        <testcase name="testCanAck" file="/app/tests/Unit/Queues/AbstractQueueTest.php" line="66" class="Tests\Unit\Queues\AbstractQueueTest" classname="Tests.Unit.Queues.AbstractQueueTest" assertions="0" time="0.000104"/>
+      </testsuite>
+      <testsuite name="Tests\Unit\DTOs\PublishMessageDTOTest" file="/app/tests/Unit/DTOs/PublishMessageDTOTest.php" tests="6" assertions="10" errors="0" failures="0" skipped="0" time="0.000715">
+        <testcase name="testJsonSerialize" file="/app/tests/Unit/DTOs/PublishMessageDTOTest.php" line="70" class="Tests\Unit\DTOs\PublishMessageDTOTest" classname="Tests.Unit.DTOs.PublishMessageDTOTest" assertions="1" time="0.000202"/>
+        <testcase name="testCanCreatePublishMessageDTO" file="/app/tests/Unit/DTOs/PublishMessageDTOTest.php" line="12" class="Tests\Unit\DTOs\PublishMessageDTOTest" classname="Tests.Unit.DTOs.PublishMessageDTOTest" assertions="2" time="0.000115"/>
+        <testcase name="testCanCreateWithMinimalData" file="/app/tests/Unit/DTOs/PublishMessageDTOTest.php" line="25" class="Tests\Unit\DTOs\PublishMessageDTOTest" classname="Tests.Unit.DTOs.PublishMessageDTOTest" assertions="2" time="0.000084"/>
+        <testcase name="testCanCreateWithBodyOnly" file="/app/tests/Unit/DTOs/PublishMessageDTOTest.php" line="33" class="Tests\Unit\DTOs\PublishMessageDTOTest" classname="Tests.Unit.DTOs.PublishMessageDTOTest" assertions="2" time="0.000105"/>
+        <testcase name="testCanCreateWithHeadersOnly" file="/app/tests/Unit/DTOs/PublishMessageDTOTest.php" line="45" class="Tests\Unit\DTOs\PublishMessageDTOTest" classname="Tests.Unit.DTOs.PublishMessageDTOTest" assertions="2" time="0.000087"/>
+        <testcase name="testToArrayReturnsAllData" file="/app/tests/Unit/DTOs/PublishMessageDTOTest.php" line="57" class="Tests\Unit\DTOs\PublishMessageDTOTest" classname="Tests.Unit.DTOs.PublishMessageDTOTest" assertions="1" time="0.000121"/>
+      </testsuite>
+      <testsuite name="Tests\Unit\Strategies\AbstractEventStrategyTest" file="/app/tests/Unit/Strategies/AbstractEventStrategyTest.php" tests="3" assertions="3" errors="0" failures="0" skipped="0" time="0.000578">
+        <testcase name="testThrowsExceptionForInvalidMessage" file="/app/tests/Unit/Strategies/AbstractEventStrategyTest.php" line="41" class="Tests\Unit\Strategies\AbstractEventStrategyTest" classname="Tests.Unit.Strategies.AbstractEventStrategyTest" assertions="1" time="0.000395"/>
+        <testcase name="testValidatesRequiredFields" file="/app/tests/Unit/Strategies/AbstractEventStrategyTest.php" line="52" class="Tests\Unit\Strategies\AbstractEventStrategyTest" classname="Tests.Unit.Strategies.AbstractEventStrategyTest" assertions="2" time="0.000123"/>
+        <testcase name="testCanHandleValidMessage" file="/app/tests/Unit/Strategies/AbstractEventStrategyTest.php" line="30" class="Tests\Unit\Strategies\AbstractEventStrategyTest" classname="Tests.Unit.Strategies.AbstractEventStrategyTest" assertions="0" time="0.000060"/>
+      </testsuite>
+      <testsuite name="Tests\Unit\Strategies\ExampleEventStrategyTest" file="/app/tests/Unit/Strategies/ExampleEventStrategyTest.php" tests="2" assertions="1" errors="0" failures="0" skipped="0" time="0.000323">
+        <testcase name="testProcessMethodIsImplemented" file="/app/tests/Unit/Strategies/ExampleEventStrategyTest.php" line="31" class="Tests\Unit\Strategies\ExampleEventStrategyTest" classname="Tests.Unit.Strategies.ExampleEventStrategyTest" assertions="1" time="0.000221"/>
+        <testcase name="testCanHandleMessage" file="/app/tests/Unit/Strategies/ExampleEventStrategyTest.php" line="20" class="Tests\Unit\Strategies\ExampleEventStrategyTest" classname="Tests.Unit.Strategies.ExampleEventStrategyTest" assertions="0" time="0.000102"/>
+      </testsuite>
+      <testsuite name="Tests\Unit\ConsumerMessageQueueDTOTest" file="/app/tests/Unit/ConsumerMessageQueueDTOTest.php" tests="3" assertions="7" errors="0" failures="0" skipped="0" time="0.000332">
+        <testcase name="testCanCreateConsumerMessageQueueDTO" file="/app/tests/Unit/ConsumerMessageQueueDTOTest.php" line="12" class="Tests\Unit\ConsumerMessageQueueDTOTest" classname="Tests.Unit.ConsumerMessageQueueDTOTest" assertions="3" time="0.000105"/>
+        <testcase name="testCanCreateWithMinimalData" file="/app/tests/Unit/ConsumerMessageQueueDTOTest.php" line="27" class="Tests\Unit\ConsumerMessageQueueDTOTest" classname="Tests.Unit.ConsumerMessageQueueDTOTest" assertions="3" time="0.000122"/>
+        <testcase name="testToArrayReturnsAllData" file="/app/tests/Unit/ConsumerMessageQueueDTOTest.php" line="36" class="Tests\Unit\ConsumerMessageQueueDTOTest" classname="Tests.Unit.ConsumerMessageQueueDTOTest" assertions="1" time="0.000105"/>
+      </testsuite>
+      <testsuite name="Tests\Unit\EventStrategyFactoryTest" file="/app/tests/Unit/EventStrategyFactoryTest.php" tests="6" assertions="6" errors="0" failures="0" skipped="0" time="0.000857">
+        <testcase name="testCanCreateFactory" file="/app/tests/Unit/EventStrategyFactoryTest.php" line="13" class="Tests\Unit\EventStrategyFactoryTest" classname="Tests.Unit.EventStrategyFactoryTest" assertions="1" time="0.000168"/>
+        <testcase name="testCanGetStrategy" file="/app/tests/Unit/EventStrategyFactoryTest.php" line="24" class="Tests\Unit\EventStrategyFactoryTest" classname="Tests.Unit.EventStrategyFactoryTest" assertions="1" time="0.000062"/>
+        <testcase name="testReturnsNullForUnknownTopic" file="/app/tests/Unit/EventStrategyFactoryTest.php" line="36" class="Tests\Unit\EventStrategyFactoryTest" classname="Tests.Unit.EventStrategyFactoryTest" assertions="1" time="0.000052"/>
+        <testcase name="testCanAddMapping" file="/app/tests/Unit/EventStrategyFactoryTest.php" line="44" class="Tests\Unit\EventStrategyFactoryTest" classname="Tests.Unit.EventStrategyFactoryTest" assertions="1" time="0.000048"/>
+        <testcase name="testCachesStrategies" file="/app/tests/Unit/EventStrategyFactoryTest.php" line="52" class="Tests\Unit\EventStrategyFactoryTest" classname="Tests.Unit.EventStrategyFactoryTest" assertions="1" time="0.000352"/>
+        <testcase name="testGetAvailableTopics" file="/app/tests/Unit/EventStrategyFactoryTest.php" line="66" class="Tests\Unit\EventStrategyFactoryTest" classname="Tests.Unit.EventStrategyFactoryTest" assertions="1" time="0.000174"/>
+      </testsuite>
+      <testsuite name="Tests\Unit\ExampleTest" file="/app/tests/Unit/ExampleTest.php" tests="1" assertions="1" errors="0" failures="0" skipped="0" time="0.000143">
+        <testcase name="testThatTrueIsTrue" file="/app/tests/Unit/ExampleTest.php" line="14" class="Tests\Unit\ExampleTest" classname="Tests.Unit.ExampleTest" assertions="1" time="0.000143"/>
+      </testsuite>
+    </testsuite>
+  </testsuite>
+</testsuites>

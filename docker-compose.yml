@@ -1,101 +1,17 @@
-version: "3.8"
-
 services:
-    application:
-        container_name: arcadyan-payment-service-api
-        build:
-            context: ./
-            dockerfile: .setup/Dockerfile
-        volumes:
-            - ./:/var/www/html
-        ports:
-            - "8100:80"
-        networks:
-            - arcadyan
-
-    redis:
-        image: redis:latest
-        container_name: redis
-        ports:
-            - "6379:6379"
-        networks:
-            - arcadyan
-
-    mongo:
-        image: mongo:5.0.3
-        container_name: mongo
-        volumes:
-            - ./.docker/mongo:/data/db
-        ports:
-            - "27017:27017"
-        networks:
-            - arcadyan
-
-    mysql:
-        image: mysql:5.7.29
-        container_name: arcadyan-db
-        restart: unless-stopped
-        tty: true
-        environment:
-            MYSQL_DATABASE: ${DB_DATABASE}
-            MYSQL_USER: ${DB_USERNAME}
-            MYSQL_ROOT_PASSWORD: ${DB_PASSWORD}
-            MYSQL_PASSWORD: ${DB_PASSWORD}
-            SERVICE_TAGS: dev
-            SERVICE_NAME: mysql
-        volumes:
-            - ./.docker/mysql:/var/lib/mysql
-        ports:
-            - ${DB_PORT}:3306
-        expose:
-            - 3306
-        networks:
-            - arcadyan
-
-    zookeeper:
-        image: confluentinc/cp-zookeeper:latest
-        container_name: zookeeper
-        environment:
-            ZOOKEEPER_CLIENT_PORT: 2181
-            ZOOKEEPER_TICK_TIME: 2000
-            TZ: "America/Sao_Paulo"
-        networks:
-            - arcadyan
-
-    kafka:
-        image: confluentinc/cp-kafka:latest
-        container_name: kafka
-        depends_on:
-            - zookeeper
-        environment:
-            KAFKA_BROKER_ID: 1
-            KAFKA_ZOOKEEPER_CONNECT: zookeeper:2181
-            KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://kafka:9092,PLAINTEXT_HOST://localhost:29092
-            KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: PLAINTEXT:PLAINTEXT,PLAINTEXT_HOST:PLAINTEXT
-            KAFKA_INTER_BROKER_LISTENER_NAME: PLAINTEXT
-            KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
-            KAFKA_CREATE_TOPICS: ""
-            TZ: "America/Sao_Paulo"
-        volumes:
-            - ./.docker/kafka:/data/db
-        networks:
-            - arcadyan
-
-    kafka-ui:
-        image: provectuslabs/kafka-ui
-        container_name: kafka-ui
-        ports:
-            - "8083:8080"
-        restart: on-failure
-        depends_on:
-            - kafka
-        environment:
-            - KAFKA_CLUSTERS_0_NAME=local
-            - KAFKA_CLUSTERS_0_BOOTSTRAPSERVERS=kafka:9092
-            - KAFKA_CLUSTERS_0_ZOOKEEPER=zookeeper:2181
-        networks:
-            - arcadyan
+  # Serviço simples para desenvolvimento
+  queue-sdk-dev:
+    build:
+      context: .
+      dockerfile: Dockerfile.simple
+    container_name: queue-sdk-dev
+    volumes:
+      - .:/app
+    working_dir: /app
+    stdin_open: true
+    tty: true
+    command: /bin/bash
 
 networks:
-    arcadyan:
-        external: true
+  default:
+    name: queue-sdk-network

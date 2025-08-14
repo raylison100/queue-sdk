@@ -6,7 +6,13 @@
     "license": "MIT",
     "require": {
         "php": "^8.2",
+        "ext-json": "*",
+        "ext-curl": "*",
+        "ext-openssl": "*",
         "aws/aws-sdk-php": "^3.320"
+    },
+    "suggest": {
+        "ext-rdkafka": "Required for Apache Kafka support. Install with: pecl install rdkafka"
     },
     "require-dev": {
         "friendsofphp/php-cs-fixer": "^3.62",
@@ -25,6 +31,24 @@
         }
     },
     "scripts": {
+        "post-install-cmd": [
+            "@check-extensions"
+        ],
+        "post-update-cmd": [
+            "@check-extensions"
+        ],
+        "check-extensions": [
+            "php -r \"echo '\\n=== Queue SDK - Dependency Check ===\\n';\"",
+            "php -r \"echo 'PHP Version: ' . PHP_VERSION . '\\n\\n';\"",
+            "php -r \"echo 'Required Extensions:\\n';\"",
+            "php -r \"echo '  ✓ JSON: ' . (extension_loaded('json') ? '\\033[32mOK\\033[0m' : '\\033[31mMISSING\\033[0m') . '\\n';\"",
+            "php -r \"echo '  ✓ cURL: ' . (extension_loaded('curl') ? '\\033[32mOK\\033[0m' : '\\033[31mMISSING\\033[0m') . '\\n';\"",
+            "php -r \"echo '  ✓ OpenSSL: ' . (extension_loaded('openssl') ? '\\033[32mOK\\033[0m' : '\\033[31mMISSING\\033[0m') . '\\n\\n';\"",
+            "php -r \"echo 'Optional Extensions:\\n';\"",
+            "php -r \"echo '  ⚡ RdKafka: ' . (extension_loaded('rdkafka') ? '\\033[32mINSTALLED\\033[0m' : '\\033[33mNOT INSTALLED\\033[0m (for Kafka support)') . '\\n\\n';\"",
+            "php -r \"if (!extension_loaded('rdkafka')) echo '\\033[33m💡 Install RdKafka for Kafka: pecl install rdkafka\\033[0m\\n\\n';\"",
+            "php -r \"echo '📚 Documentation: \\033[36mhttps://github.com/your-repo/queue-sdk\\033[0m\\n';\""
+        ],
         "test": "php -d memory_limit=-1 vendor/bin/phpunit --testdox --no-coverage",
         "test-coverage": "XDEBUG_MODE=coverage php -d memory_limit=-1 vendor/bin/phpunit --coverage-html=coverage",
         "cs-check": "vendor/bin/php-cs-fixer fix -v --using-cache no --dry-run --stop-on-violation",

@@ -1,17 +1,101 @@
 services:
-  # Serviço simples para desenvolvimento
-  queue-sdk-dev:
-    build:
-      context: .
-      dockerfile: Dockerfile.simple
-    container_name: queue-sdk-dev
-    volumes:
-      - .:/app
-    working_dir: /app
-    stdin_open: true
-    tty: true
-    command: /bin/bash
+    # Serviço simples para desenvolvimento
+    queue-sdk-dev:
+        build:
+            context: .
+            dockerfile: Dockerfile
+        container_name: queue-sdk-dev
+        volumes:
+            - .:/app
+        working_dir: /app
+        stdin_open: true
+        tty: true
+        command: /bin/bash
+        networks:
+            - credit
+
+    kafka:
+        image: confluentinc/cp-kafka:latest
+        container_name: kafka
+        restart: unless-stopped
+        user: root
+        networks:
+            - credit
+        environment:
+            # — KRaft (sem ZooKeeper) —
+            KAFKA_KRAFT_MODE: "true"
+            KAFKA_PROCESS_ROLES: "broker,controller"
+            KAFKA_NODE_ID: 1
+
+            # — Listeners (0.0.0.0 para bind, depois anunciamos dois hosts distintos) —
+            KAFKA_LISTENERS: >
+                PLAINTEXT://0.0.0.0:9092,\
+                PLAINTEXT_HOST://0.0.0.0:29092,\
+                CONTROLLER://0.0.0.0:9093
+
+            # — O "anunciado" para clientes internos usa o hostname do serviço,
+            #    já para clientes externos (via host) usamos localhost:29092 —
+            KAFKA_ADVERTISED_LISTENERS: >
+                PLAINTEXT://kafka:9092,\
+                PLAINTEXT_HOST://localhost:29092,\
+                CONTROLLER://kafka:9093
+
+            # — Mapear cada listener a um protocolo —
+            KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: >
+                PLAINTEXT:PLAINTEXT,\
+                PLAINTEXT_HOST:PLAINTEXT,\
+                CONTROLLER:PLAINTEXT
+
+            KAFKA_INTER_BROKER_LISTENER_NAME: PLAINTEXT
+            KAFKA_CONTROLLER_LISTENER_NAMES: CONTROLLER
+
+            # — Quorum Raft (nó único) —
+            KAFKA_CONTROLLER_QUORUM_VOTERS: "1@kafka:9093"
+
+            # — Tópicos internos —
+            KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
+
+            # — UUID do cluster (gere uma vez com kafka-storage random-uuid) —
+            CLUSTER_ID: "f3e8c9d2-4a1b-4e2a-9c56-123456789abc"
+
+        # Garante que o diretório exista e seja gravável por appuser (UID1000).
+        command: >
+            bash -c "\
+                mkdir -p /var/lib/kafka/data && \
+                chown -R 1000:1000 /var/lib/kafka/data && \
+                exec /etc/confluent/docker/run \
+            "
+        volumes:
+            - .docker/kafka:/var/lib/kafka/data
+        ports:
+            - "29092:29092"
+
+    kafka-ui:
+        image: provectuslabs/kafka-ui:latest
+        container_name: kafka-ui
+        restart: unless-stopped
+        depends_on:
+            - kafka
+        ports:
+            - "8083:8080"
+        networks:
+            - credit
+        environment:
+            KAFKA_CLUSTERS_0_NAME: local
+            KAFKA_CLUSTERS_0_BOOTSTRAPSERVERS: kafka:9092
+
+    queue:
+        image: roribio16/alpine-sqs
+        container_name: local-sqs
+        restart: unless-stopped
+        ports:
+            - "${SQS_API_PORT:-9324}:9324"
+            - "${SQS_WEB_PORT:-9325}:9325"
+        networks:
+            - credit
+        volumes:
+            - ./.setup/build/config/dev/sqs/elasticmq.conf:/opt/config/elasticmq.conf
 
 networks:
-  default:
-    name: queue-sdk-network
+    credit:
+        name: queue-sdk-network

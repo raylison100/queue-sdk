@@ -1,0 +1,904 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Queue SDK - Performance Dashboard</title>
+    <!-- Favicon removido -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <style>
+        .gradient-bg {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        }
+        .card-hover {
+            transition: all 0.3s ease;
+        }
+        .card-hover:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 25px rgba(0,0,0,0.1);
+        }
+        .status-dot {
+            display: inline-block;
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            margin-right: 8px;
+        }
+        .status-passed { background-color: #10b981; }
+        .status-failed { background-color: #ef4444; }
+        .status-warning { background-color: #f59e0b; }
+        .metric-card {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+        .loader {
+            border: 4px solid #f3f4f6;
+            border-top: 4px solid #3b82f6;
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            animation: spin 1s linear infinite;
+        }
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        /* Custom scrollbar styles */
+        .overflow-y-auto::-webkit-scrollbar {
+            width: 8px;
+        }
+        .overflow-y-auto::-webkit-scrollbar-track {
+            background: #f1f5f9;
+            border-radius: 4px;
+        }
+        .overflow-y-auto::-webkit-scrollbar-thumb {
+            background: #cbd5e1;
+            border-radius: 4px;
+        }
+        .overflow-y-auto::-webkit-scrollbar-thumb:hover {
+            background: #94a3b8;
+        }
+    </style>
+</head>
+<body class="bg-gray-100 min-h-screen">
+    <!-- Header -->
+    <div class="gradient-bg text-white p-6 shadow-lg">
+        <div class="container mx-auto">
+            <div class="flex items-center justify-between">
+                <div>
+                    <h1 class="text-3xl font-bold flex items-center">
+                        <i class="fas fa-chart-line mr-3"></i>
+                        Queue SDK Performance Dashboard
+                    </h1>
+                    <p class="text-blue-100 mt-2">Monitoramento em tempo real dos testes de performance</p>
+                </div>
+                <div class="text-right">
+                    <div class="text-sm opacity-75">Última atualização:</div>
+                    <div id="lastUpdate" class="font-mono text-lg">--:--:--</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="container mx-auto p-6">
+        <!-- Status Cards -->
+        <div class="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
+            <!-- Connectivity Status -->
+            <div class="metric-card rounded-lg p-6 card-hover">
+                <div class="flex items-center justify-between">
+                    <div>
+                        <h3 class="text-sm font-medium text-gray-500">Conectividade</h3>
+                        <div id="connectivityStatus" class="flex items-center mt-2">
+                            <span class="status-dot status-warning"></span>
+                            <span class="text-sm text-gray-600">Verificando...</span>
+                        </div>
+                    </div>
+                    <div class="p-3 bg-blue-100 rounded-full">
+                        <i class="fas fa-network-wired text-blue-600 text-xl"></i>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Total Tests -->
+            <div class="metric-card rounded-lg p-6 card-hover">
+                <div class="flex items-center justify-between">
+                    <div>
+                        <h3 class="text-sm font-medium text-gray-500">Testes Executados</h3>
+                        <p id="totalTests" class="text-2xl font-bold text-gray-900 mt-2">0</p>
+                    </div>
+                    <div class="p-3 bg-green-100 rounded-full">
+                        <i class="fas fa-check-circle text-green-600 text-xl"></i>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Success Rate -->
+            <div class="metric-card rounded-lg p-6 card-hover">
+                <div class="flex items-center justify-between">
+                    <div>
+                        <h3 class="text-sm font-medium text-gray-500">Taxa de Sucesso</h3>
+                        <p id="successRate" class="text-2xl font-bold text-gray-900 mt-2">0%</p>
+                    </div>
+                    <div class="p-3 bg-purple-100 rounded-full">
+                        <i class="fas fa-percentage text-purple-600 text-xl"></i>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Best Performance -->
+            <div class="metric-card rounded-lg p-6 card-hover">
+                <div class="flex items-center justify-between">
+                    <div>
+                        <h3 class="text-sm font-medium text-gray-500">Melhor Performance</h3>
+                        <p id="bestPerformance" class="text-2xl font-bold text-gray-900 mt-2">0 msg/s</p>
+                    </div>
+                    <div class="p-3 bg-yellow-100 rounded-full">
+                        <i class="fas fa-trophy text-yellow-600 text-xl"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Main Content Grid -->
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+            <!-- Performance Chart -->
+            <div class="metric-card rounded-lg p-6">
+                <h3 class="text-lg font-semibold mb-4 flex items-center">
+                    <i class="fas fa-chart-bar mr-2 text-blue-600"></i>
+                    Performance por Configuração
+                </h3>
+                <canvas id="performanceChart" width="400" height="200"></canvas>
+            </div>
+
+            <!-- Real-time Metrics -->
+            <div class="metric-card rounded-lg p-6">
+                <h3 class="text-lg font-semibold mb-4 flex items-center">
+                    <i class="fas fa-tachometer-alt mr-2 text-green-600"></i>
+                    Métricas em Tempo Real
+                </h3>
+                <div id="realTimeMetrics" class="space-y-4 overflow-y-auto max-h-80">
+                    <div class="flex justify-center">
+                        <div class="loader"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Test Results Table -->
+        <div class="metric-card rounded-lg p-6 mt-8">
+            <h3 class="text-lg font-semibold mb-4 flex items-center">
+                <i class="fas fa-table mr-2 text-purple-600"></i>
+                Histórico de Testes
+            </h3>
+            <div class="overflow-x-auto overflow-y-auto max-h-96">
+                <table class="min-w-full divide-y divide-gray-200">
+                    <thead class="bg-gray-50 sticky top-0">
+                        <tr>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Timestamp</th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Tópico</th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Mensagens</th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Batch</th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Producer (msg/s)</th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Consumer (msg/s)</th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Eficiência</th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
+                        </tr>
+                    </thead>
+                    <tbody id="testResultsTable" class="bg-white divide-y divide-gray-200">
+                        <!-- Results will be populated here -->
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- Control Panel -->
+        <div class="metric-card rounded-lg p-6 mt-8">
+            <h3 class="text-lg font-semibold mb-4 flex items-center">
+                <i class="fas fa-play-circle mr-2 text-red-600"></i>
+                Executar Teste Personalizado
+            </h3>
+            <div class="flex justify-center">
+                <button onclick="openTestForm()" class="bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-lg flex items-center justify-center text-lg font-semibold">
+                    <i class="fas fa-cogs mr-2"></i>
+                    Executar Teste
+                </button>
+            </div>
+        </div>
+
+        <!-- Modal Formulário de Teste -->
+        <div id="testFormModal" class="fixed inset-0 bg-black bg-opacity-40 flex items-center justify-center z-50 hidden">
+            <div class="bg-white rounded-lg shadow-lg p-4 sm:p-8 w-full max-w-lg relative mx-2 sm:mx-0">
+                <button onclick="closeTestForm()" class="absolute top-2 right-2 text-gray-400 hover:text-gray-700"><i class="fas fa-times"></i></button>
+                <h2 class="text-xl font-bold mb-4 flex items-center"><i class="fas fa-vial mr-2 text-blue-600"></i>Configurar Teste</h2>
+
+                <!-- Predefinições -->
+                <div class="mb-6">
+                    <div class="mb-2 text-gray-700 font-medium">Predefinições rápidas:</div>
+                    <div class="grid grid-cols-2 gap-3">
+                        <button type="button" class="bg-blue-100 hover:bg-blue-200 text-blue-800 rounded px-3 py-2 text-sm font-semibold" onclick="fillPreset('connectivity')">� Debug (5 msgs)</button>
+                        <button type="button" class="bg-green-100 hover:bg-green-200 text-green-800 rounded px-3 py-2 text-sm font-semibold" onclick="fillPreset('development')">⚡ Desenvolvimento (50 msgs)</button>
+                        <button type="button" class="bg-orange-100 hover:bg-orange-200 text-orange-800 rounded px-3 py-2 text-sm font-semibold" onclick="fillPreset('load')">� E-commerce (500 msgs)</button>
+                        <button type="button" class="bg-red-100 hover:bg-red-200 text-red-800 rounded px-3 py-2 text-sm font-semibold" onclick="fillPreset('stress')">� Black Friday (2K msgs)</button>
+                    </div>
+                    <div class="grid grid-cols-2 gap-3 mt-2">
+                        <button type="button" class="bg-purple-100 hover:bg-purple-200 text-purple-800 rounded px-3 py-2 text-sm font-semibold" onclick="fillPreset('micro')">⚡ IoT Sensores (100 msgs/1)</button>
+                        <button type="button" class="bg-indigo-100 hover:bg-indigo-200 text-indigo-800 rounded px-3 py-2 text-sm font-semibold" onclick="fillPreset('bulk')">� Analytics (1K msgs/100)</button>
+                    </div>
+                </div>
+
+                <form id="testForm" onsubmit="submitTestForm(event)">
+                    <div class="mb-4">
+                        <label class="block text-gray-700 font-medium mb-1 flex items-center">
+                            Quantidade de Mensagens
+                            <span class="ml-2 text-gray-400 cursor-pointer" title="Número total de mensagens a serem enviadas no teste.">
+                                <i class="fas fa-info-circle"></i>
+                            </span>
+                        </label>
+                        <input type="number" id="messages" name="messages" class="w-full border rounded px-3 py-2" placeholder="100">
+                    </div>
+                    <div class="mb-4">
+                        <label class="block text-gray-700 font-medium mb-1 flex items-center">
+                            Tamanho do Batch
+                            <span class="ml-2 text-gray-400 cursor-pointer" title="Quantidade de mensagens enviadas por lote (batch) em cada operação.">
+                                <i class="fas fa-info-circle"></i>
+                            </span>
+                        </label>
+                        <input type="number" id="batch_size" name="batch_size" class="w-full border rounded px-3 py-2" placeholder="10">
+                    </div>
+                    <div class="mb-4">
+                        <label class="block text-gray-700 font-medium mb-1 flex items-center">
+                            Workers
+                            <span class="ml-2 text-gray-400 cursor-pointer" title="Número de produtores/consumidores paralelos (concorrência).">
+                                <i class="fas fa-info-circle"></i>
+                            </span>
+                        </label>
+                        <input type="number" id="workers" name="workers" class="w-full border rounded px-3 py-2" placeholder="1">
+                    </div>
+                    <div class="mb-4">
+                        <label class="block text-gray-700 font-medium mb-1 flex items-center">
+                            Timeout (segundos)
+                            <span class="ml-2 text-gray-400 cursor-pointer" title="Tempo máximo de espera para consumir todas as mensagens.">
+                                <i class="fas fa-info-circle"></i>
+                            </span>
+                        </label>
+                        <input type="number" id="timeout" name="timeout" class="w-full border rounded px-3 py-2" placeholder="60">
+                    </div>
+                    <div class="mb-4">
+                        <label class="block text-gray-700 font-medium mb-1 flex items-center">
+                            Tipo de Fila
+                            <span class="ml-2 text-gray-400 cursor-pointer" title="Escolha entre Kafka (alta performance, streaming) ou SQS (fila simples AWS).">
+                                <i class="fas fa-info-circle"></i>
+                            </span>
+                        </label>
+                        <select id="queue_type" name="queue_type" class="w-full border rounded px-3 py-2" onchange="togglePartitionsField()">
+                            <option value="kafka">Kafka</option>
+                            <option value="sqs">SQS</option>
+                        </select>
+                    </div>
+                    <div class="mb-4" id="partitionsField">
+                        <label class="block text-gray-700 font-medium mb-1 flex items-center">
+                            Partições (Kafka)
+                            <span class="ml-2 text-gray-400 cursor-pointer" title="Número de partições do tópico Kafka (paralelismo interno do broker).">
+                                <i class="fas fa-info-circle"></i>
+                            </span>
+                        </label>
+                        <input type="number" id="partitions" name="partitions" class="w-full border rounded px-3 py-2" placeholder="1">
+                    </div>
+                    <div class="mb-4">
+                        <label class="block text-gray-700 font-medium mb-1 flex items-center">
+                            Tópico (opcional)
+                            <span class="ml-2 text-gray-400 cursor-pointer" title="Nome do tópico/fila a ser utilizado. Se vazio, será gerado automaticamente.">
+                                <i class="fas fa-info-circle"></i>
+                            </span>
+                        </label>
+                        <input type="text" id="topic" name="topic" class="w-full border rounded px-3 py-2" placeholder="">
+                    </div>
+                    <div class="flex justify-end">
+                        <button type="submit" class="bg-blue-600 hover:bg-blue-700 text-white px-6 py-2 rounded-lg font-semibold flex items-center">
+                            <i class="fas fa-play mr-2"></i>Executar
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Footer -->
+    <footer class="bg-gray-800 text-white p-6 mt-12 fixed bottom-0 left-0 w-full z-40">
+        <div class="container mx-auto text-center">
+            <p>&copy; 2025 Queue SDK Performance Dashboard. Monitoramento em tempo real.</p>
+            <div class="mt-2 text-sm text-gray-400">
+                <i class="fas fa-server mr-1"></i>
+                Kafka: localhost:9092 |
+                <i class="fas fa-eye mr-1"></i>
+                <a href="http://localhost:8083" target="_blank" class="text-blue-400 hover:underline">Kafka UI</a> |
+                <i class="fas fa-queue mr-1"></i>
+                <a href="http://localhost:9325" target="_blank" class="text-blue-400 hover:underline">SQS Web</a>
+            </div>
+        </div>
+    </footer>
+
+    <script>
+        // Dashboard state
+        let dashboard = {
+            data: [],
+            chart: null,
+            lastUpdate: null
+        };
+
+        // Initialize dashboard
+        document.addEventListener('DOMContentLoaded', function() {
+            initializeChart();
+            loadTestResults();
+            updateTimestamp();
+
+            // Auto-refresh every 30 seconds
+            setInterval(function() {
+                loadTestResults();
+                updateTimestamp();
+            }, 30000);
+        });
+
+        // Initialize performance chart
+        function initializeChart() {
+            const ctx = document.getElementById('performanceChart').getContext('2d');
+            dashboard.chart = new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: ['Leve', 'Médio', 'Pesado'],
+                    datasets: [{
+                        label: 'Producer (msg/s)',
+                        data: [0, 0, 0],
+                        backgroundColor: 'rgba(59, 130, 246, 0.6)',
+                        borderColor: 'rgba(59, 130, 246, 1)',
+                        borderWidth: 1
+                    }, {
+                        label: 'Consumer (msg/s)',
+                        data: [0, 0, 0],
+                        backgroundColor: 'rgba(16, 185, 129, 0.6)',
+                        borderColor: 'rgba(16, 185, 129, 1)',
+                        borderWidth: 1
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            title: {
+                                display: true,
+                                text: 'Mensagens por Segundo'
+                            }
+                        }
+                    },
+                    plugins: {
+                        legend: {
+                            position: 'top',
+                        },
+                        title: {
+                            display: true,
+                            text: 'Performance Comparativa'
+                        }
+                    }
+                }
+            });
+        }
+
+        // Load test results from JSON files
+        async function loadTestResults() {
+            try {
+                const response = await fetch('/api/test-results');
+                const data = await response.json();
+
+                if (data.success) {
+                    updateDashboard(data.results);
+                    // Passar dados completos para a tabela
+                    updateTestResultsTable(data);
+                } else {
+                    // Simulate data for demo
+                    updateDashboard(generateSampleData());
+                }
+            } catch (error) {
+                console.log('Using sample data for demonstration');
+                updateDashboard(generateSampleData());
+            }
+        }
+
+        // Generate sample data for demonstration
+        function generateSampleData() {
+            return {
+                connectivity: { status: 'passed' },
+                simple_test: {
+                    producer: { sent: 5, rate: 25.3, errors: 0 },
+                    consumer: { processed: 5, rate: 23.1, errors: 0 },
+                    success_rate: 100.0
+                },
+                performance: {
+                    'Leve': {
+                        producer: { rate: 47.2, errors: 0 },
+                        consumer: { rate: 45.2, errors: 0 },
+                        efficiency: 95.8
+                    },
+                    'Médio': {
+                        producer: { rate: 52.1, errors: 0 },
+                        consumer: { rate: 48.9, errors: 0 },
+                        efficiency: 93.9
+                    },
+                    'Pesado': {
+                        producer: { rate: 48.7, errors: 1 },
+                        consumer: { rate: 44.2, errors: 1 },
+                        efficiency: 90.8
+                    }
+                },
+                timestamp: new Date().toISOString()
+            };
+        }
+
+        // Update dashboard with new data
+        function updateDashboard(data) {
+            dashboard.data = data;
+
+            // Update connectivity status
+            updateConnectivityStatus(data.connectivity);
+
+            // Update summary cards
+            updateSummaryCards(data);
+
+            // Update chart
+            updateChart(data.performance);
+
+            // Update real-time metrics
+            updateRealTimeMetrics(data);
+
+            // Table será atualizada separadamente em loadTestResults
+        }
+
+        // Update connectivity status
+        function updateConnectivityStatus(connectivity) {
+            const statusElement = document.getElementById('connectivityStatus');
+            const isPassed = connectivity && connectivity.status === 'passed';
+
+            statusElement.innerHTML = `
+                <span class="status-dot ${isPassed ? 'status-passed' : 'status-failed'}"></span>
+                <span class="text-sm ${isPassed ? 'text-green-600' : 'text-red-600'}">
+                    ${isPassed ? 'Conectado' : 'Falha na conexão'}
+                </span>
+            `;
+        }
+
+        // Update summary cards
+        function updateSummaryCards(data) {
+            // Total tests - usar data.summary da API
+            const testsCount = data.summary ? data.summary.totalTests : 0;
+            document.getElementById('totalTests').textContent = testsCount;
+
+            // Success rate - calcular com base na eficiência média
+            const avgEfficiency = data.summary ? data.summary.avgEfficiency : 0;
+            document.getElementById('successRate').textContent = avgEfficiency.toFixed(1) + '%';
+
+            // Best performance - encontrar a maior taxa de consumer nos resultados
+            let bestRate = 0;
+            if (data.performance && Array.isArray(data.performance)) {
+                data.performance.forEach(perf => {
+                    if (perf.consumer > bestRate) {
+                        bestRate = perf.consumer;
+                    }
+                });
+            }
+            document.getElementById('bestPerformance').textContent = bestRate.toFixed(1) + ' msg/s';
+        }
+
+        // Update performance chart
+        function updateChart(performanceData) {
+            if (!performanceData || !dashboard.chart || !Array.isArray(performanceData)) return;
+
+            // Agrupar dados por número de mensagens para criar categorias
+            const grouped = {};
+            performanceData.forEach(perf => {
+                const category = perf.messages <= 10 ? 'Leve (≤10)' :
+                               perf.messages <= 50 ? 'Médio (11-50)' : 'Pesado (>50)';
+                if (!grouped[category]) {
+                    grouped[category] = { producer: [], consumer: [] };
+                }
+                grouped[category].producer.push(perf.producer);
+                grouped[category].consumer.push(perf.consumer);
+            });
+
+            // Calcular médias para cada categoria
+            const labels = Object.keys(grouped);
+            const producerRates = labels.map(label => {
+                const rates = grouped[label].producer;
+                return rates.length > 0 ? rates.reduce((a, b) => a + b, 0) / rates.length : 0;
+            });
+            const consumerRates = labels.map(label => {
+                const rates = grouped[label].consumer;
+                return rates.length > 0 ? rates.reduce((a, b) => a + b, 0) / rates.length : 0;
+            });
+
+            dashboard.chart.data.labels = labels;
+            dashboard.chart.data.datasets[0].data = producerRates;
+            dashboard.chart.data.datasets[1].data = consumerRates;
+            dashboard.chart.update();
+        }
+
+        // Update real-time metrics
+        function updateRealTimeMetrics(data) {
+            const container = document.getElementById('realTimeMetrics');
+            let html = '';
+
+            if (data.simple_test) {
+                html += `
+                    <div class="bg-blue-50 p-4 rounded-lg">
+                        <div class="text-sm font-medium text-blue-800">Teste Simples</div>
+                        <div class="mt-2 grid grid-cols-2 gap-4 text-sm">
+                            <div>
+                                <span class="text-gray-600">Producer:</span>
+                                <span class="font-bold">${data.simple_test.producer.rate.toFixed(1)} msg/s</span>
+                            </div>
+                            <div>
+                                <span class="text-gray-600">Consumer:</span>
+                                <span class="font-bold">${data.simple_test.consumer.rate.toFixed(1)} msg/s</span>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            }
+
+            if (data.performance) {
+                Object.entries(data.performance).forEach(([name, perf]) => {
+                    const efficiency = perf.efficiency || 0;
+                    const efficiencyColor = efficiency > 95 ? 'green' : efficiency > 90 ? 'yellow' : 'red';
+
+                    html += `
+                        <div class="bg-${efficiencyColor}-50 p-4 rounded-lg">
+                            <div class="text-sm font-medium text-${efficiencyColor}-800">${name}</div>
+                            <div class="mt-2 flex justify-between text-sm">
+                                <span class="text-gray-600">Eficiência: <span class="font-bold">${efficiency.toFixed(1)}%</span></span>
+                                <span class="text-gray-600">Rate: <span class="font-bold">${(perf.consumer?.rate || 0).toFixed(1)} msg/s</span></span>
+                            </div>
+                        </div>
+                    `;
+                });
+            }
+
+            container.innerHTML = html || '<div class="text-center text-gray-500">Nenhum dado disponível</div>';
+        }
+
+        // Update test results table
+        function updateTestResultsTable(data) {
+            const tbody = document.getElementById('testResultsTable');
+            let html = '';
+
+            // Usar data.results.performance da estrutura correta da API
+            if (data.results && data.results.performance && Array.isArray(data.results.performance)) {
+                data.results.performance.forEach(perf => {
+                    const status = perf.efficiency >= 90 ? 'Sucesso' : 'Falha';
+                    const statusClass = perf.efficiency >= 90 ? 'text-green-600' : 'text-red-600';
+                    const timestamp = new Date(perf.timestamp || Date.now()).toLocaleString('pt-BR');
+
+                    html += `
+                        <tr>
+                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">${timestamp}</td>
+                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">${perf.topic || 'N/A'}</td>
+                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">${perf.messages}</td>
+                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">${perf.batch}</td>
+                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">${perf.producer.toFixed(1)}</td>
+                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">${perf.consumer.toFixed(1)}</td>
+                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">${perf.efficiency}%</td>
+                            <td class="px-6 py-4 whitespace-nowrap text-sm ${statusClass}">${status}</td>
+                        </tr>
+                    `;
+                });
+            }
+
+            tbody.innerHTML = html || '<tr><td colspan="8" class="px-6 py-4 text-center text-gray-500">Nenhum teste executado</td></tr>';
+        }
+
+        // Update timestamp
+        function updateTimestamp() {
+            document.getElementById('lastUpdate').textContent = new Date().toLocaleTimeString('pt-BR');
+        }
+
+        // Run test function
+        // Modal de formulário de teste
+        function openTestForm() {
+            document.getElementById('testFormModal').classList.remove('hidden');
+            togglePartitionsField();
+        }
+        function closeTestForm() {
+            document.getElementById('testFormModal').classList.add('hidden');
+        }
+
+        async function submitTestForm(event) {
+            event.preventDefault();
+            const form = document.getElementById('testForm');
+            const button = form.querySelector('button[type="submit"]');
+            const originalText = button.innerHTML;
+            button.disabled = true;
+            button.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i>Executando...';
+
+            // Coletar dados do formulário
+            const messages = form.messages.value;
+            const batch_size = form.batch_size.value;
+            const workers = form.workers.value;
+            const timeout = form.timeout.value;
+            const queue_type = form.queue_type.value;
+            const partitions = form.partitions.value;
+            const topic = form.topic.value;
+
+            try {
+                const response = await fetch('/api/run-test', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        messages,
+                        batch_size,
+                        workers,
+                        timeout,
+                        queue_type,
+                        partitions,
+                        topic
+                    })
+                });
+
+                const result = await response.json();
+
+                // Iniciar acompanhamento do progresso com o nome real do tópico
+                let topicForProgress = result && result.params && result.params.topic
+                    ? result.params.topic
+                    : (topic || `test-${Math.floor(Math.random()*10000)}`);
+                showProgress(topicForProgress);
+
+                if (result.success) {
+                    showNotification(`✅ ${result.message}`, 'success');
+                    clearTestForm();
+                    closeTestForm();
+                    setTimeout(() => {
+                        loadTestResults();
+                        updateTimestamp();
+                        clearInterval(progressInterval);
+                    }, 3000);
+                } else {
+                    showNotification(`❌ Erro: ${result.message}`, 'error');
+                }
+            } catch (error) {
+                console.error('Erro ao executar teste:', error);
+                showNotification('❌ Erro de conexão ao executar teste', 'error');
+            } finally {
+                button.disabled = false;
+                button.innerHTML = originalText;
+            }
+        }
+
+        // Progresso em tempo real
+        let progressInterval = null;
+        function showProgress(topic) {
+            clearInterval(progressInterval);
+            const metrics = document.getElementById('realTimeMetrics');
+            metrics.innerHTML = '<div class="flex justify-center"><div class="loader"></div></div>';
+            
+            function fetchProgress() {
+                Promise.all([
+                    fetch(`/api/progress?topic=${encodeURIComponent(topic)}&role=producer`).then(r => r.ok ? r.json() : { success: false }),
+                    fetch(`/api/progress?topic=${encodeURIComponent(topic)}&role=consumer`).then(r => r.ok ? r.json() : { success: false })
+                ]).then(([prod, cons]) => {
+                    let html = '';
+                    
+                    if (prod && prod.success && prod.data) {
+                        const data = prod.data;
+                        const percent = data.percent || 0;
+                        const rate = data.rate || 0;
+                        
+                        html += `
+                            <div class="bg-gradient-to-r from-blue-50 to-blue-100 p-4 rounded-lg border-l-4 border-blue-500 shadow-sm">
+                                <div class="flex items-center justify-between mb-2">
+                                    <div class="flex items-center">
+                                        <div class="w-3 h-3 bg-blue-500 rounded-full mr-2 animate-pulse"></div>
+                                        <span class="font-semibold text-blue-800">📤 Producer</span>
+                                    </div>
+                                    <span class="text-blue-600 font-bold">${rate.toFixed(1)} msg/s</span>
+                                </div>
+                                <div class="flex items-center justify-between mb-2">
+                                    <span class="text-sm text-blue-700">${data.sent || 0}/${data.total || 0} mensagens</span>
+                                    <span class="text-sm font-bold text-blue-800">${percent.toFixed(1)}%</span>
+                                </div>
+                                <div class="w-full bg-blue-200 rounded-full h-2">
+                                    <div class="bg-blue-600 h-2 rounded-full transition-all duration-500" style="width: ${percent}%"></div>
+                                </div>
+                            </div>
+                        `;
+                    }
+                    
+                    if (cons && cons.success && cons.data) {
+                        const data = cons.data;
+                        const percent = data.percent || 0;
+                        const rate = data.rate || 0;
+                        
+                        html += `
+                            <div class="bg-gradient-to-r from-green-50 to-green-100 p-4 rounded-lg border-l-4 border-green-500 shadow-sm">
+                                <div class="flex items-center justify-between mb-2">
+                                    <div class="flex items-center">
+                                        <div class="w-3 h-3 bg-green-500 rounded-full mr-2 animate-pulse"></div>
+                                        <span class="font-semibold text-green-800">📥 Consumer</span>
+                                    </div>
+                                    <span class="text-green-600 font-bold">${rate.toFixed(1)} msg/s</span>
+                                </div>
+                                <div class="flex items-center justify-between mb-2">
+                                    <span class="text-sm text-green-700">${data.processed || 0}/${data.expected || 0} mensagens</span>
+                                    <span class="text-sm font-bold text-green-800">${percent.toFixed(1)}%</span>
+                                </div>
+                                <div class="w-full bg-green-200 rounded-full h-2">
+                                    <div class="bg-green-600 h-2 rounded-full transition-all duration-500" style="width: ${percent}%"></div>
+                                </div>
+                            </div>
+                        `;
+                    }
+                    
+                    if (!html) {
+                        html = `
+                            <div class="text-center p-8 bg-gray-50 rounded-lg border-2 border-dashed border-gray-200">
+                                <div class="text-4xl mb-4">⏳</div>
+                                <div class="text-lg font-medium text-gray-600 mb-2">Preparando teste...</div>
+                                <div class="text-sm text-gray-500">Os arquivos de progresso serão criados quando o teste iniciar</div>
+                            </div>
+                        `;
+                    }
+                    
+                    metrics.innerHTML = html;
+                }).catch(error => {
+                    console.log('Progress fetch error:', error);
+                    metrics.innerHTML = `
+                        <div class="text-center p-8 bg-yellow-50 rounded-lg border border-yellow-200">
+                            <div class="text-3xl mb-2">⚠️</div>
+                            <div class="text-yellow-800 font-medium">Conectando...</div>
+                        </div>
+                    `;
+                });
+            }
+            
+            fetchProgress();
+            progressInterval = setInterval(fetchProgress, 1000); // Reduzido para 1s para melhor responsividade
+        }
+        // Chame showProgress(topic) ao iniciar um teste para acompanhar o progresso.
+
+        // Responsividade: garantir que o container principal não fique escondido atrás do footer
+        document.addEventListener('DOMContentLoaded', function() {
+            const footer = document.querySelector('footer');
+            const container = document.querySelector('.container.mx-auto.p-6');
+            if (footer && container) {
+                container.style.paddingBottom = (footer.offsetHeight + 32) + 'px';
+            }
+        });
+
+        // Mostrar/esconder campo Partições conforme tipo de fila
+        function togglePartitionsField() {
+            const queueType = document.getElementById('queue_type').value;
+            const partitionsField = document.getElementById('partitionsField');
+            if (queueType === 'kafka') {
+                partitionsField.style.display = '';
+            } else {
+                partitionsField.style.display = 'none';
+            }
+        }
+        // Inicializar corretamente ao abrir modal
+        function openTestForm() {
+            document.getElementById('testFormModal').classList.remove('hidden');
+            togglePartitionsField();
+        }
+        function closeTestForm() {
+            document.getElementById('testFormModal').classList.add('hidden');
+        }
+
+        // Limpar formulário de teste
+        function clearTestForm() {
+            const form = document.getElementById('testForm');
+            form.messages.value = '';
+            form.batch_size.value = '';
+            form.workers.value = '';
+            form.timeout.value = '';
+            form.queue_type.value = 'kafka';
+            form.partitions.value = '';
+            form.topic.value = '';
+        }
+
+        // Preencher formulário com predefinição
+        function fillPreset(type) {
+            const form = document.getElementById('testForm');
+            switch(type) {
+                case 'connectivity':
+                    // Debug rápido - verificar se sistema está funcionando
+                    form.messages.value = '5';
+                    form.batch_size.value = '1';
+                    form.workers.value = '1';
+                    form.timeout.value = '30';
+                    form.queue_type.value = 'kafka';
+                    form.partitions.value = '1';
+                    form.topic.value = 'debug-check';
+                    break;
+                case 'development':
+                    // Desenvolvimento - volume moderado para testes funcionais
+                    form.messages.value = '50';
+                    form.batch_size.value = '10';
+                    form.workers.value = '1';
+                    form.timeout.value = '45';
+                    form.queue_type.value = 'kafka';
+                    form.partitions.value = '1';
+                    form.topic.value = 'dev-features';
+                    break;
+                case 'load':
+                    // E-commerce típico - carrinho de compras, pagamentos
+                    form.messages.value = '500';
+                    form.batch_size.value = '25';
+                    form.workers.value = '1';
+                    form.timeout.value = '120';
+                    form.queue_type.value = 'kafka';
+                    form.partitions.value = '2';
+                    form.topic.value = 'ecommerce-orders';
+                    break;
+                case 'stress':
+                    // Black Friday - picos extremos de tráfego
+                    form.messages.value = '2000';
+                    form.batch_size.value = '100';
+                    form.workers.value = '1';
+                    form.timeout.value = '300';
+                    form.queue_type.value = 'kafka';
+                    form.partitions.value = '4';
+                    form.topic.value = 'black-friday';
+                    break;
+                case 'micro':
+                    // IoT sensores - muitas mensagens pequenas e frequentes
+                    form.messages.value = '200';
+                    form.batch_size.value = '1';
+                    form.workers.value = '1';
+                    form.timeout.value = '60';
+                    form.queue_type.value = 'kafka';
+                    form.partitions.value = '1';
+                    form.topic.value = 'iot-sensors';
+                    break;
+                case 'bulk':
+                    // Analytics em massa - processamento de relatórios
+                    form.messages.value = '1000';
+                    form.batch_size.value = '100';
+                    form.workers.value = '1';
+                    form.timeout.value = '180';
+                    form.queue_type.value = 'kafka';
+                    form.partitions.value = '3';
+                    form.topic.value = 'analytics-batch';
+                    break;
+            }
+            togglePartitionsField();
+        }
+
+        // Show notification function
+        function showNotification(message, type = 'info') {
+            const notification = document.createElement('div');
+            notification.className = `fixed top-4 right-4 p-4 rounded-lg shadow-lg z-50 ${
+                type === 'success' ? 'bg-green-500' :
+                type === 'error' ? 'bg-red-500' :
+                'bg-blue-500'
+            } text-white`;
+
+            notification.innerHTML = `
+                <div class="flex items-center">
+                    <span>${message}</span>
+                    <button onclick="this.parentElement.parentElement.remove()" class="ml-4 text-white hover:text-gray-200">
+                        <i class="fas fa-times"></i>
+                    </button>
+                </div>
+            `;
+
+            document.body.appendChild(notification);
+
+            // Auto remove after 5 seconds
+            setTimeout(() => {
+                notification.remove();
+            }, 5000);
+        }
+    </script>
+</body>
+</html>

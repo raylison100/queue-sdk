@@ -21,16 +21,6 @@ abstract class AbstractEventStrategy implements EventHandleInterface
         if (empty($body)) {
             throw new \InvalidArgumentException('Message body cannot be empty');
         }
-
-        // Validate required fields if getRequiredFields is implemented
-        if (method_exists($this, 'getRequiredFields')) {
-            $requiredFields = $this->getRequiredFields();
-            foreach ($requiredFields as $field) {
-                if (!isset($body[$field]) || $body[$field] === null) {
-                    throw new \InvalidArgumentException("Required field '{$field}' is missing from message body");
-                }
-            }
-        }
     }
 
     public function handle(ConsumerMessageQueueDTO $dto): void

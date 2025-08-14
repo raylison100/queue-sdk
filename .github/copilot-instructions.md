@@ -1,5 +1,150 @@
 # GitHub Copilot Instructions - Queue SDK
 
+## ⚠️ CRUCIAL: AMBIENTE DOCKER OBRIGATÓRIO
+
+**REGRA FUNDAMENTAL**: Todo e qualquer comando DEVE ser executado através do Docker/containers. JAMAIS execute comandos diretamente na máquina do usuário.
+
+### Infraestrutura Disponível:
+- **Kafka**: `kafka:9092` (interno), `localhost:29092` (externo)
+- **Kafka UI**: http://localhost:8083 (interface web)
+- **SQS Local**: http://localhost:9324 (API), http://localhost:9325 (web)
+- **PHP Environment**: Container `queue-sdk-dev` com todas as dependências
+
+### Comandos Docker Obrigatórios:
+```bash
+# Para iniciar toda a infraestrutura (Kafka, SQS, PHP)
+make dev
+
+# Para testes (SEMPRE via container)
+make test
+
+# Para shell no container PHP
+make shell
+
+# Para limpeza completa
+make clean
+
+# Para comandos específicos no container
+docker-compose exec queue-sdk-dev [comando]
+
+# Para verificar logs dos serviços
+docker-compose logs kafka
+docker-compose logs queue
+docker-compose logs kafka-ui
+```
+
+**❌ NUNCA EXECUTE DIRETAMENTE:**
+- `php`, `composer`, `./vendor/bin/phpunit`
+- `phpunit`, `php artisan`, `php -v`
+- Qualquer comando PHP sem `docker-compose exec`
+
+**✅ SEMPRE USE:**
+- `make test` (para testes)
+- `make shell` seguido dos comandos dentro do container
+- `docker-compose exec queue-sdk-dev [comando]`
+
+### Workflow de Desenvolvimento:
+
+1. **Subir ambiente**: `make dev`
+   - Inicia todos os serviços: PHP, Kafka, SQS, Kafka UI
+   - Cria network `credit` para comunicação entre containers
+   - Expõe portas para acesso externo
+
+2. **Verificar status**: `make status`
+   - Mostra status de todos os containers
+   - Verifica se serviços estão rodando corretamente
+
+3. **Executar testes**: `make test`
+   - Executa PHPUnit dentro do container PHP
+   - Testes incluem mocking para RdKafka (extensão não instalada no ambiente de teste)
+
+4. **Desenvolvimento**: `make shell`
+   - Acessa shell do container PHP para comandos manuais
+   - Use apenas para desenvolvimento, debug ou comandos específicos
+
+5. **Ver logs**: `make logs`
+   - Monitora logs de todos os serviços em tempo real
+   - Útil para debug de problemas com Kafka/SQS
+
+6. **Verificar serviços**: 
+   - **Kafka UI**: http://localhost:8083 (interface web do Kafka)
+   - **SQS Web**: http://localhost:9325 (interface web do SQS)
+   - **SQS API**: http://localhost:9324 (endpoint da API SQS)
+
+7. **Limpeza**: `make clean`
+   - Para todos os containers
+   - Remove volumes e dados temporários
+   - Limpa network
+
+### Configuração dos Serviços:
+
+#### Kafka (Confluent CP-Kafka)
+- **Modo**: KRaft (sem ZooKeeper)
+- **Porta interna**: `kafka:9092` (para containers)
+- **Porta externa**: `localhost:29092` (para testes externos)
+- **Controller**: `kafka:9093`
+- **UI**: http://localhost:8083
+- **Configurações de performance**: Batch processing, compressão Snappy, replicação 1
+
+#### SQS Local (ElasticMQ)
+- **API**: http://localhost:9324
+- **Web UI**: http://localhost:9325
+- **Configuração**: `.setup/build/config/dev/sqs/elasticmq.conf`
+- **Filas**: `default` (configurável)
+- **Timeout**: 60s visibility, 5s delay
+
+#### PHP Development Container
+- **Nome**: `queue-sdk-dev`
+- **PHP**: 8.2.29
+- **Composer**: Instalado com todas as dependências
+- **PHPUnit**: 10.5.30
+- **Volume**: Todo projeto montado em `/app`
+
+### Comandos Docker Específicos:
+
+```bash
+# Verificar logs específicos de um serviço
+docker-compose logs kafka
+docker-compose logs queue
+docker-compose logs kafka-ui
+
+# Executar comandos específicos no container PHP
+docker-compose exec queue-sdk-dev composer install
+docker-compose exec queue-sdk-dev php -v
+docker-compose exec queue-sdk-dev vendor/bin/phpunit tests/Unit/
+
+# Reiniciar um serviço específico
+docker-compose restart kafka
+docker-compose restart queue
+
+# Build apenas o container PHP
+docker-compose build queue-sdk-dev
+```
+
+### Troubleshooting:
+
+#### Problemas Comuns:
+1. **Porta em uso**: Pare outros serviços que usem 9092, 9324, 9325, 8083
+2. **Network conflicts**: Use `make clean` seguido de `docker network prune`
+3. **Volume permissions**: Kafka data em `.docker/kafka/` precisa ser gravável
+4. **Container not starting**: Verifique logs com `docker-compose logs [service]`
+
+#### Comandos de Debug:
+```bash
+# Verificar networks
+docker network ls
+
+# Verificar volumes
+docker volume ls
+
+# Remover tudo (CUIDADO!)
+docker system prune -a --volumes
+
+# Debug específico de um container
+docker-compose exec queue-sdk-dev bash
+docker-compose exec kafka bash
+```
+
 ## Visão Geral do Projeto
 
 Este projeto implementa um **SDK PHP para consumo de eventos de mensageria** usando **Arquitetura Hexagonal (Clean Architecture)**. O SDK oferece suporte para **Apache Kafka**, **Amazon SQS** e é extensível para outras implementações de filas de mensagem, seguindo princípios **SOLID** e **Event-Driven Architecture**.

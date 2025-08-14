@@ -9,12 +9,14 @@ class ConsumerMessageQueueDTO
     private array $headers;
     private array $body;
     private ?string $receiptHandle;
+    private ?string $key;
 
     public function __construct(array $data)
     {
         $this->headers = $data['headers'] ?? [];
         $this->body = $data['body'] ?? [];
         $this->receiptHandle = $data['receiptHandle'] ?? null;
+        $this->key = $data['key'] ?? null;
     }
 
     public function getHeaders(): array
@@ -32,12 +34,18 @@ class ConsumerMessageQueueDTO
         return $this->receiptHandle;
     }
 
+    public function getKey(): ?string
+    {
+        return $this->key;
+    }
+
     public function toArray(): array
     {
         return [
             'headers' => $this->headers,
             'body' => $this->body,
             'receiptHandle' => $this->receiptHandle,
+            'key' => $this->key,
         ];
     }
 }

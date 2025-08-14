@@ -1,0 +1,50 @@
+#!/usr/bin/env php
+<?php
+
+declare(strict_types=1);
+
+require_once __DIR__ . '/../vendor/autoload.php';
+
+use ExampleProject\Events\StrategyFactory;
+use QueueSDK\DTOs\ConsumerMessageQueueDTO;
+
+echo "🧪 Testing Event Strategies\n";
+echo "===========================\n\n";
+
+// Test UserCreatedStrategy
+echo "1. Testing UserCreatedStrategy:\n";
+$userStrategy = StrategyFactory::create('user_created');
+if ($userStrategy) {
+    $userData = [
+        'user_id' => 'USER123',
+        'email' => 'test@example.com',
+        'name' => 'Test User',
+        'created_at' => date('Y-m-d H:i:s')
+    ];
+
+    $userDto = new ConsumerMessageQueueDTO(['body' => $userData, 'headers' => ['MessageId' => 'MSG001']]);
+    $userStrategy->handle($userDto);
+} else {
+    echo "❌ Failed to create UserCreatedStrategy\n";
+}
+
+echo "\n" . str_repeat("-", 50) . "\n\n";
+
+// Test LoadTestStrategy
+echo "2. Testing LoadTestStrategy:\n";
+$loadTestStrategy = StrategyFactory::create('load_test');
+if ($loadTestStrategy) {
+    $testData = [
+        'message_id' => 100,
+        'event_type' => 'test_event',
+        'data' => ['test' => 'data']
+    ];
+
+    $loadTestDto = new ConsumerMessageQueueDTO(['body' => $testData, 'headers' => ['MessageId' => 'MSG003']]);
+    $loadTestStrategy->handle($loadTestDto);
+} else {
+    echo "❌ Failed to create LoadTestStrategy\n";
+}
+
+echo "\n✅ All strategy tests completed!\n";
+echo "\nAvailable events: " . implode(', ', array_keys(StrategyFactory::getAvailableEvents())) . "\n";

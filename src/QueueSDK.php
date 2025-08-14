@@ -2,29 +2,78 @@
 
 declare(strict_types=1);
 
+namespace QueueSDK;
+
+use QueueSDK\Contracts\QueueInterface;
+use QueueSDK\Queues\KafkaQueue;
+use QueueSDK\Queues\SqsQueue;
+use QueueSDK\DTOs\PublishMessageQueueDTO;
+use QueueSDK\DTOs\ConsumerMessageQueueDTO;
+
 /**
- * Queue SDK - PHP Event Messaging Library
+ * Queue SDK - Classe principal do SDK
  *
- * Um SDK PHP robusto para consumo de eventos de mensageria
- * com suporte a Apache Kafka, Amazon SQS e outras implementações.
- *
- * @package QueueSDK
- * @version 1.0.0
- * @author  Your Name
- * @license MIT
+ * Classe principal para gerenciar filas de mensagem com diferentes provedores
  */
+class QueueSDK
+{
+    private ?QueueInterface $queue = null;
+    private array $config;
 
-// Autoload principais classes do SDK
-require_once __DIR__ . '/Contracts/QueueInterface.php';
-require_once __DIR__ . '/Contracts/EventHandleInterface.php';
-require_once __DIR__ . '/DTOs/ConsumerMessageQueueDTO.php';
-require_once __DIR__ . '/DTOs/PublishMessageQueueDTO.php';
-require_once __DIR__ . '/Queues/AbstractQueue.php';
-require_once __DIR__ . '/Strategies/AbstractEventStrategy.php';
-require_once __DIR__ . '/Factories/EventStrategyFactory.php';
-require_once __DIR__ . '/Consumers/AbstractQueueConsumer.php';
+    public function __construct(array $config)
+    {
+        $this->config = $config;
+    }
 
-// Implementações disponíveis
-require_once __DIR__ . '/Queues/SqsQueueSDK.php';
-require_once __DIR__ . '/Queues/KafkaQueue.php';
-require_once __DIR__ . '/Strategies/ExampleEventStrategy.php';
+    private function createQueue(string $topicName = ''): QueueInterface
+    {
+        $queueType = $this->config['queue_type'] ?? 'kafka';
+
+        return match ($queueType) {
+            'kafka' => new KafkaQueue(
+                implode(",", $this->config['kafka']['brokers'] ?? ['kafka:9092']),
+                $topicName,
+                $this->config['kafka']['group_id'] ?? 'default-group'
+            ),
+            'sqs' => new SqsQueue($this->config['sqs'] ?? []),
+            default => throw new \InvalidArgumentException("Queue type '{$queueType}' not supported")
+        };
+    }
+
+    /**
+     * Publica uma mensagem na fila
+     */
+    public function publish(PublishMessageQueueDTO $message): bool
+    {
+        $queue = $this->createQueue($message->getTopicName());
+        return $queue->publish($message) ?? false;
+    }
+
+    /**
+     * Consome mensagens da fila
+     */
+    public function consume(string $queueName, callable $callback, array $options = []): void
+    {
+        $queue = $this->createQueue($queueName);
+        $queue->consume($queueName, $callback, $options);
+    }
+
+    /**
+     * Obtém a instância da fila configurada
+     */
+    public function getQueue(string $topicName = ''): QueueInterface
+    {
+        if (!$this->queue) {
+            $this->queue = $this->createQueue($topicName);
+        }
+        return $this->queue;
+    }
+
+    /**
+     * Obtém a configuração atual
+     */
+    public function getConfig(): array
+    {
+        return $this->config;
+    }
+}

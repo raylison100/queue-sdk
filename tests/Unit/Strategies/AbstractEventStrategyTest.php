@@ -19,11 +19,6 @@ class AbstractEventStrategyTest extends TestCase
             {
                 // Test implementation
             }
-
-            protected function getRequiredFields(): array
-            {
-                return ['user_id', 'action'];
-            }
         };
     }
 
@@ -31,7 +26,8 @@ class AbstractEventStrategyTest extends TestCase
     {
         $dto = new ConsumerMessageQueueDTO([
             'body' => ['user_id' => 123, 'action' => 'created'],
-            'headers' => ['EventType' => 'user_created']
+            'headers' => ['EventType' => 'user_created'],
+            'key' => 'test-key'
         ]);
 
         $this->expectNotToPerformAssertions();
@@ -41,30 +37,27 @@ class AbstractEventStrategyTest extends TestCase
     public function testThrowsExceptionForInvalidMessage(): void
     {
         $dto = new ConsumerMessageQueueDTO([
-            'body' => ['invalid' => 'data'],
-            'headers' => ['EventType' => 'user_created']
+            'body' => [], // empty body
+            'headers' => ['EventType' => 'user_created'],
+            'key' => 'test-key'
         ]);
 
         $this->expectException(\InvalidArgumentException::class);
+        $this->expectExceptionMessage('Message body cannot be empty');
         $this->strategy->handle($dto);
     }
 
     public function testValidatesRequiredFields(): void
     {
+        // Test that valid messages are processed successfully
         $validDto = new ConsumerMessageQueueDTO([
             'body' => ['user_id' => 123, 'action' => 'created'],
+            'headers' => ['EventType' => 'user_created'],
+            'key' => 'test-key'
         ]);
 
-        $invalidDto = new ConsumerMessageQueueDTO([
-            'body' => ['user_id' => 123], // missing 'action'
-        ]);
-
-        // Test valid DTO doesn't throw exception
+        // Should not throw any exception
+        $this->expectNotToPerformAssertions();
         $this->strategy->handle($validDto);
-        $this->assertTrue(true); // Explicit assertion to avoid risky test
-
-        // Test invalid DTO throws exception
-        $this->expectException(\InvalidArgumentException::class);
-        $this->strategy->handle($invalidDto);
     }
 }

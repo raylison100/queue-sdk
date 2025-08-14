@@ -58,7 +58,8 @@ class PublishMessageDTOTest extends TestCase
     {
         $data = [
             'body' => ['test' => 'data'],
-            'headers' => ['type' => 'test']
+            'headers' => ['type' => 'test'],
+            'key' => 'test_key'  // Incluir key no teste
         ];
 
         $dto = new PublishMessageQueueDTO($data);
@@ -71,7 +72,8 @@ class PublishMessageDTOTest extends TestCase
     {
         $data = [
             'body' => ['user_id' => 456],
-            'headers' => ['EventType' => 'user_updated']
+            'headers' => ['EventType' => 'user_updated'],
+            'key' => 'user_456'  // Incluir key no teste
         ];
 
         $dto = new PublishMessageQueueDTO($data);
@@ -79,5 +81,44 @@ class PublishMessageDTOTest extends TestCase
         $decoded = json_decode($json, true);
 
         $this->assertEquals($data, $decoded);
+    }
+
+    public function testToArrayWithoutKey(): void
+    {
+        $data = [
+            'body' => ['test' => 'data'],
+            'headers' => ['type' => 'test']
+        ];
+
+        $dto = new PublishMessageQueueDTO($data);
+        $result = $dto->toArray();
+
+        $expected = [
+            'body' => ['test' => 'data'],
+            'headers' => ['type' => 'test'],
+            'key' => null
+        ];
+
+        $this->assertEquals($expected, $result);
+    }
+
+    public function testJsonSerializeWithoutKey(): void
+    {
+        $data = [
+            'body' => ['user_id' => 456],
+            'headers' => ['EventType' => 'user_updated']
+        ];
+
+        $dto = new PublishMessageQueueDTO($data);
+        $json = json_encode($dto);
+        $decoded = json_decode($json, true);
+
+        $expected = [
+            'body' => ['user_id' => 456],
+            'headers' => ['EventType' => 'user_updated'],
+            'key' => null
+        ];
+
+        $this->assertEquals($expected, $decoded);
     }
 }

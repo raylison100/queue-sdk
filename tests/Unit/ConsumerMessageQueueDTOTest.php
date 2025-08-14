@@ -14,7 +14,8 @@ class ConsumerMessageQueueDTOTest extends TestCase
         $data = [
             'body' => ['user_id' => 123, 'action' => 'created'],
             'headers' => ['EventType' => 'user_created'],
-            'receiptHandle' => 'test-receipt-handle'
+            'receiptHandle' => 'test-receipt-handle',
+            'key' => 'user_123'
         ];
 
         $dto = new ConsumerMessageQueueDTO($data);
@@ -22,6 +23,7 @@ class ConsumerMessageQueueDTOTest extends TestCase
         $this->assertEquals(['user_id' => 123, 'action' => 'created'], $dto->getBody());
         $this->assertEquals(['EventType' => 'user_created'], $dto->getHeaders());
         $this->assertEquals('test-receipt-handle', $dto->getReceiptHandle());
+        $this->assertEquals('user_123', $dto->getKey());
     }
 
     public function testCanCreateWithMinimalData(): void
@@ -31,6 +33,7 @@ class ConsumerMessageQueueDTOTest extends TestCase
         $this->assertEquals([], $dto->getBody());
         $this->assertEquals([], $dto->getHeaders());
         $this->assertNull($dto->getReceiptHandle());
+        $this->assertNull($dto->getKey());
     }
 
     public function testToArrayReturnsAllData(): void
@@ -38,12 +41,27 @@ class ConsumerMessageQueueDTOTest extends TestCase
         $data = [
             'body' => ['test' => 'data'],
             'headers' => ['type' => 'test'],
-            'receiptHandle' => 'handle-123'
+            'receiptHandle' => 'handle-123',
+            'key' => 'test_key'
         ];
 
         $dto = new ConsumerMessageQueueDTO($data);
         $result = $dto->toArray();
 
         $this->assertEquals($data, $result);
+    }
+
+    public function testGetKeyReturnsCorrectValue(): void
+    {
+        $dto = new ConsumerMessageQueueDTO(['key' => 'partition_key_123']);
+
+        $this->assertEquals('partition_key_123', $dto->getKey());
+    }
+
+    public function testGetKeyReturnsNullWhenNotSet(): void
+    {
+        $dto = new ConsumerMessageQueueDTO([]);
+
+        $this->assertNull($dto->getKey());
     }
 }

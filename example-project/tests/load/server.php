@@ -242,7 +242,7 @@ if (php_sapi_name() === 'cli') {
 
     if ($path === '/api/test-results') {
         serveDashboardData();
-    } elseif ($method === 'POST' && $path === '/api/run-test') {
+    } elseif ($method === 'POST' && ($path === '/api/run-test' || $path === '/server.php' || basename($path) === 'server.php')) {
         // Endpoint para executar testes
         header('Content-Type: application/json');
 

@@ -1,10 +1,11 @@
 {
     "type": "consumer",
-    "topic": "lote-ctes-2",
+    "topic": "black-friday-2",
     "processed": 2000,
     "expected": 2000,
     "errors": 0,
     "percent": 100,
+    "rate": 166.5,
     "finished": true,
-    "timestamp": "2025-08-14T01:25:46+00:00"
+    "timestamp": "2025-08-14T03:15:00+00:00"
 }

@@ -17,3 +17,9 @@ yarn-error.log
 /data/db/
 /jenkins_data/
 
+# Test results and progress files
+example-project/tests/load/data/
+example-project/tests/load/results/
+example-project/tests/load/progress_*.json
+example-project/tests/load/*.log
+

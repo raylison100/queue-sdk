@@ -21,11 +21,13 @@ $messages   = isset($argv[3]) && is_numeric($argv[3]) ? (int)$argv[3] : 10;
 $batchSize  = isset($argv[4]) && is_numeric($argv[4]) ? (int)$argv[4] : 5;
 $workers    = isset($argv[5]) && is_numeric($argv[5]) ? (int)$argv[5] : 1;
 $timeout    = isset($argv[6]) && is_numeric($argv[6]) ? (int)$argv[6] : 60;
-$queueType  = $argv[7] ?? 'kafka';
+$partitions = isset($argv[7]) && is_numeric($argv[7]) ? (int)$argv[7] : 1;
+$queueType  = $argv[8] ?? 'kafka';
 
 echo "🚀 Queue SDK - Teste de Performance Simplificado\n";
 echo "===============================================\n";
-echo "Tipo: $testType | Tópico: $topic | Mensagens: $messages | Batch: $batchSize\n\n";
+echo "Tipo: $testType | Tópico: $topic | Mensagens: $messages | Batch: $batchSize\n";
+echo "Workers: $workers | Timeout: $timeout | Partições: $partitions\n\n";
 
 // Configuração do SDK
 $config = [
@@ -73,14 +75,18 @@ try {
             echo "[ERROR] Falha ao enviar mensagem $i: " . $e->getMessage() . "\n";
         }
 
-        // Salvar progresso
+        // Atualizar progresso em tempo real
+        $currentTime = microtime(true);
+        $elapsedTime = $currentTime - $startTime;
+        $currentRate = $elapsedTime > 0 ? $sent / $elapsedTime : 0;
+
         $progress = [
-            'type' => 'producer',
             'topic' => $topic,
             'sent' => $sent,
             'total' => $messages,
             'errors' => $errors,
             'percent' => round(($sent / $messages) * 100, 1),
+            'rate' => round($currentRate, 1),
             'finished' => ($i === $messages),
             'timestamp' => date('c')
         ];
@@ -125,6 +131,10 @@ try {
                 $queue->ack($dto);
 
                 // Salvar progresso do consumer
+                $currentTime = microtime(true);
+                $elapsedTime = $currentTime - $startTime;
+                $currentRate = $elapsedTime > 0 ? $processed / $elapsedTime : 0;
+
                 $consumerProgress = [
                     'type' => 'consumer',
                     'topic' => $topic,
@@ -132,6 +142,7 @@ try {
                     'expected' => $messages,
                     'errors' => $consumerErrors,
                     'percent' => round(($processed / $messages) * 100, 1),
+                    'rate' => round($currentRate, 1),
                     'finished' => ($processed >= $messages),
                     'timestamp' => date('c')
                 ];
@@ -187,6 +198,7 @@ try {
             'batch_size' => $batchSize,
             'workers' => $workers,
             'timeout' => $timeout,
+            'partitions' => $partitions,
             'queue_type' => $queueType
         ],
         'producer' => [

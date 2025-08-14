@@ -1,0 +1,26 @@
+{
+    "test_type": "basic",
+    "topic": "lote-ctes-4",
+    "config": {
+        "messages": 2000,
+        "batch_size": 100,
+        "workers": 4,
+        "timeout": 300,
+        "partitions": 1,
+        "queue_type": "kafka"
+    },
+    "producer": {
+        "sent": 2000,
+        "errors": 0,
+        "rate": 524.3,
+        "duration": 3.81
+    },
+    "consumer": {
+        "processed": 2000,
+        "errors": 0,
+        "rate": 163.8,
+        "duration": 12.21
+    },
+    "efficiency": 100,
+    "timestamp": "2025-08-14T01:45:08+00:00"
+}

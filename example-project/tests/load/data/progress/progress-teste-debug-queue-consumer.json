@@ -1,0 +1,11 @@
+{
+    "type": "consumer",
+    "topic": "teste-debug-queue",
+    "processed": 5,
+    "expected": 5,
+    "errors": 0,
+    "percent": 100,
+    "rate": 1.6,
+    "finished": true,
+    "timestamp": "2025-08-14T01:32:44+00:00"
+}

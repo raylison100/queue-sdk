@@ -1,0 +1,11 @@
+{
+    "type": "consumer",
+    "topic": "dev-features",
+    "processed": 50,
+    "expected": 50,
+    "errors": 0,
+    "percent": 100,
+    "rate": 15.1,
+    "finished": true,
+    "timestamp": "2025-08-14T01:45:26+00:00"
+}

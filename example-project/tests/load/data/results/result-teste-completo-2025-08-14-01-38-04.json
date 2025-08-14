@@ -1,0 +1,26 @@
+{
+    "test_type": "basic",
+    "topic": "teste-completo",
+    "config": {
+        "messages": 10,
+        "batch_size": 5,
+        "workers": 2,
+        "timeout": 30,
+        "partitions": 3,
+        "queue_type": "kafka"
+    },
+    "producer": {
+        "sent": 10,
+        "errors": 0,
+        "rate": 8.3,
+        "duration": 1.21
+    },
+    "consumer": {
+        "processed": 10,
+        "errors": 0,
+        "rate": 3.3,
+        "duration": 3.07
+    },
+    "efficiency": 100,
+    "timestamp": "2025-08-14T01:38:04+00:00"
+}

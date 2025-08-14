@@ -1,0 +1,11 @@
+{
+    "type": "consumer",
+    "topic": "black-friday-4",
+    "processed": 10000,
+    "expected": 10000,
+    "errors": 0,
+    "percent": 100,
+    "rate": 161.3,
+    "finished": true,
+    "timestamp": "2025-08-14T01:59:18+00:00"
+}

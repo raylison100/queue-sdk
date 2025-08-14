@@ -1,0 +1,25 @@
+{
+    "test_type": "sqs",
+    "topic": "teste-debug-queue",
+    "config": {
+        "messages": 5,
+        "batch_size": 10,
+        "workers": 1,
+        "timeout": 60,
+        "queue_type": "kafka"
+    },
+    "producer": {
+        "sent": 5,
+        "errors": 0,
+        "rate": 5,
+        "duration": 1.01
+    },
+    "consumer": {
+        "processed": 5,
+        "errors": 0,
+        "rate": 1.6,
+        "duration": 3.14
+    },
+    "efficiency": 100,
+    "timestamp": "2025-08-14T01:32:44+00:00"
+}

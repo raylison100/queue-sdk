@@ -1,5 +1,30 @@
 {
-    "dashboard_data": null,
-    "generated_at": "2025-08-13T22:19:30-03:00",
-    "source": "empty"
+    "dashboard_data": {
+        "test_type": "basic",
+        "topic": "dev-features",
+        "config": {
+            "messages": 50,
+            "batch_size": 10,
+            "workers": 1,
+            "timeout": 45,
+            "partitions": 1,
+            "queue_type": "kafka"
+        },
+        "producer": {
+            "sent": 50,
+            "errors": 0,
+            "rate": 32.8,
+            "duration": 1.53
+        },
+        "consumer": {
+            "processed": 50,
+            "errors": 0,
+            "rate": 15.1,
+            "duration": 3.31
+        },
+        "efficiency": 100,
+        "timestamp": "2025-08-14T01:45:26+00:00"
+    },
+    "generated_at": "2025-08-13T22:49:58-03:00",
+    "source": "real"
 }

@@ -1,0 +1,11 @@
+{
+    "type": "consumer",
+    "topic": "teste-tempo-total",
+    "processed": 15,
+    "expected": 15,
+    "errors": 0,
+    "percent": 100,
+    "rate": 4.8,
+    "finished": true,
+    "timestamp": "2025-08-14T01:43:42+00:00"
+}

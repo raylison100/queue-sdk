@@ -124,12 +124,20 @@ function serveDashboardData(): void
         // Converter formato de dados para o esperado pelo dashboard
         $performanceData = [];
         foreach (array_slice($allResults, 0, 10) as $result) { // Últimos 10 resultados
+            $producerDuration = $result['producer']['duration'] ?? 0;
+            $consumerDuration = $result['consumer']['duration'] ?? 0;
+            $totalDuration = $producerDuration + $consumerDuration;
+
             $performanceData[] = [
                 'topic' => $result['topic'] ?? 'unknown',
                 'messages' => $result['config']['messages'] ?? 0,
                 'batch' => $result['config']['batch_size'] ?? 0,
+                'partitions' => $result['config']['partitions'] ?? 1,
+                'workers' => $result['config']['workers'] ?? 1,
+                'timeout' => $result['config']['timeout'] ?? 60,
                 'producer' => round($result['producer']['rate'] ?? 0, 1), // Coluna Producer (MSG/S)
                 'consumer' => round($result['consumer']['rate'] ?? 0, 1), // Coluna Consumer (MSG/S)
+                'totalDuration' => round($totalDuration, 2), // Tempo total (Producer + Consumer)
                 'efficiency' => $result['efficiency'] ?? 0,
                 'errors' => ($result['producer']['errors'] ?? 0) + ($result['consumer']['errors'] ?? 0),
                 'timestamp' => $result['timestamp'] ?? ''
